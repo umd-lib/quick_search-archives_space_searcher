@@ -1,0 +1,16 @@
+# Localization
+#
+# Replace the following placeholders with the correct values for
+# your installation.
+#
+# <NO_RESULTS_LINK>: The link for your site when there are no results
+
+en:
+  archives_space_search:
+    display_name: "ArchivesSpace"
+    short_display_name: "ArchivesSpace"
+    search_form_placeholder: "Search ArchivesSpace"
+    module_callout: "Search ArchivesSpace"
+    error_service_message: "searching ArchivesSpace"
+    no_results_service_message: "a different search from ArchivesSpace"
+    no_results_link: "<NO_RESULTS_LINK>"
