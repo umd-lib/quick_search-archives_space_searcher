@@ -1,0 +1,38 @@
+# Configuration
+#
+# Replace the following placeholders with the correct values for
+# your installation.
+#
+# search_url: The URL for performing the search
+
+defaults: &defaults
+  search_url: 'http://localhost:8081/search'
+  # The CSS to use to select from results page. Limit the # of result with :nth-of-type 
+  row_selector: '.search-results .recordrow:nth-of-type(-n+3)' 
+  # in each row, how we find the link
+  link_selector: 'h3 a'
+  # in each row, how we find the description text
+  description_selector: '.recordsummary > div:not(.result_context)'
+  # Tags we want to clear out from the description 
+  sanitize_tags:
+    - span
+  # Query params should be listed in "hash" format
+  query_params:
+    op:
+      - AND
+    field: []
+    from_year: [] 
+    to_year: []
+    q: ''
+
+development:
+  <<: *defaults
+
+test:
+  <<: *defaults
+
+staging:
+  <<: *defaults
+
+production:
+  <<: *defaults
