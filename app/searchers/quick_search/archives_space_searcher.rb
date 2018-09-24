@@ -1,21 +1,23 @@
 # frozen_string_literal: true
 
 require 'uri'
-require 'nokogiri'
+require 'json'
 
 module QuickSearch
   # QuickSearch seacher for archivesspace
   class ArchivesSpaceSearcher < QuickSearch::Searcher
+    include ActionView::Helpers::SanitizeHelper
+
     def search
       @response = @http.get(uri, follow_redirect: true)
-      @results = Nokogiri::HTML response.body
+      @results = JSON.parse response.body
       @total = total
     end
 
     def results
       return @results_list if @results_list
 
-      @results_list = @results.css(row_selector).map do |row|
+      @results_list = @results.dig('response', 'docs').map do |row|
         OpenStruct.new(
           link: get_hyperlink(row),
           title: get_title(row),
@@ -26,13 +28,15 @@ module QuickSearch
     end
 
     def total
-      return '' unless @results.title
-
-      @results.title.match(/(\d+)/).to_s
+      @results.dig('response', 'numFound') || 0
     end
 
     def loaded_link
-      uri.to_s
+      base = URI.parse native_host
+      term = http_request_queries['uri_escaped'] || ''
+      q_params = { 'q' => native_base_query_params['q'].dup << term }
+      base.query = native_base_query_params.deep_merge(q_params).to_query
+      base.to_s
     end
 
     private
@@ -41,58 +45,60 @@ module QuickSearch
         QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['search_url']
       end
 
+      def native_host
+        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['loaded_link']
+      end
+
+      def record_types
+        query = Array(QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['object_types']).map do |type|
+          "\"#{type}\""
+        end.join(' OR ')
+        "types:#{query}"
+      end
+
+      def fq_query
+        base_query_params['fq'].dup << record_types
+      end
+
       def uri
         base = URI.parse host
-        search_term = Array.wrap(http_request_queries['uri_escaped'] || '')
-        base.query = base_query_params.merge('q' => search_term).to_query
+        base.query = base_query_params.deep_merge(
+          'q' => term_query,
+          'fq' => fq_query
+        ).to_query
         base
       end
 
+      def term_query
+        params = base_query_params['q'].dup <<
+                 "fullrecord:(#{http_request_queries['uri_escaped'] || ''})"
+        params.join(' AND ')
+      end
+
       def base_query_params
-        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['query_params']
+        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['query_params'].dup
       end
 
-      def sanitize_tags
-        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['sanitize_tags']
-      end
-
-      def row_selector
-        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['row_selector']
-      end
-
-      def link_selector
-        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['link_selector']
-      end
-
-      def description_selector
-        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['description_selector']
+      def native_base_query_params
+        QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['native_query_params'].dup
       end
 
       # Returns the hyperlink to use
       def get_hyperlink(row)
-        URI.join(host, row.at(link_selector)['href']).to_s
+        URI.join(native_host, row.dig('uri')).to_s
       end
 
       # Returns the string to use for the result title
       def get_title(row)
-        row.at(link_selector).text.strip
+        strip_tags(row.dig('title'))
       end
 
       # Returns the string to use for the result description
       def get_description(row)
-        description = row.at(description_selector) || ''
+        description = row.dig('summary') || ''
         content_tag(:div,
-                    content_tag(:p, sanitize_html(description)),
+                    content_tag(:p, strip_tags(description)),
                     class: ['block-with-text'])
-      end
-
-      def sanitize_html(html)
-        return html if html.is_a? String
-
-        html.children.each do |node|
-          node.remove if sanitize_tags.include? node.name
-        end
-        html.text.strip
       end
   end
 end

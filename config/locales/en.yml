@@ -4,6 +4,7 @@
 # your installation.
 #
 # <NO_RESULTS_LINK>: The link for your site when there are no results
+# This is option and can be set in the search's configuration file.
 
 en:
   archives_space_search:
