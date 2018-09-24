@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
 
   s.files = Dir['{app,config,db,lib}/**/*', 'LICENSE', 'Rakefile', 'README.md']
 
-  s.add_dependency 'nokogiri'
   s.add_dependency 'quick_search-core', '~> 0'
   s.add_development_dependency 'rubocop', '= 0.52.1'
 end
