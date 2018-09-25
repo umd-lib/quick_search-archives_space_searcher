@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-# frozen_string_literal: true
 
 require 'uri'
 require 'json'
@@ -86,7 +85,7 @@ module QuickSearch
         QuickSearch::Engine::ARCHIVES_SPACE_CONFIG['native_query_params'].dup
       end
 
-      # Aspace content (somteimes) has EAD markup. We don't want that.
+      # Aspace content (sometimes) has EAD markup. We don't want that.
       # But we do want htmlentities to look correct.
       def strip_and_convert(str)
         CGI.unescapeHTML(strip_tags(str))
