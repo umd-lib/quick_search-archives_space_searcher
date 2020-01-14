@@ -98,7 +98,20 @@ module QuickSearch
 
       # the hit's title
       def get_title(row)
-        strip_and_convert(row.dig('title'))
+        # Default to "title" field
+        title = row.dig('title')
+
+        # But look for the "display_string" in the "json" field, and
+        # use it if available.
+        begin
+          json_str = row.dig('json')
+          parsed_json = JSON.parse(json_str)
+          display_string = parsed_json.dig('display_string')
+          title = display_string if display_string
+        rescue StandardError # rubocop:disable Lint/SuppressedException
+          # Do nothing as we will default to "title" field
+        end
+        strip_and_convert(title)
       end
 
       # the hit's description
